@@ -1,0 +1,260 @@
+from SPY_DETAILS import spy, Spy, ChatMessage, friends,chats,status
+from steganography.steganography import Steganography
+#Stegnaography is used to hide secret details from others
+from termcolor import colored
+#to differenciate between text, time, and senders name
+from datetime import datetime
+#to know about the exact time and date our message was sent
+import csv
+#to save our friends data and chats
+#Time to code
+#Starting the spychat application
+#Welcome Spy to our app
+
+STATUS_MESSAGES = ['Don ko pakadna mushkil nahi namumkin hai!', 'Na Investor ki fatkar se, na competitor ki lalkar se, Developer toh darta hai bus Customer ki Dissatisfaction se!!', 'Kahin pe pahunchne k liye kahin se nikalna bahut zaroori hota hai!']
+print "Importing done...Lets Start!"
+#Asking to continue as default user
+
+#question = "Do you wish to continue as" + spy.salutation + " " + spy.name + "(Y/ N)?"
+#existing = raw_input(question)
+#List of special words
+SPECIAL_WORDS=['SOS','SAVE ME','KHAMOOOSHH','MOGAMBO KHUSH HUA']
+#If some special messages are detected further detected
+#For checking logins attempts counter is added
+counter=0
+
+def add_your_status(recent_status_message):
+    updated_status_message = None
+    if recent_status_message != None:
+        print 'Your status message is %s \n' % (recent_status_message)
+    else:
+        print 'You have not updated any status currently \n'
+    default = raw_input("Do you wish to select from the older status (y/n)? ")
+    if default.upper() == "N":
+        new_status_message = raw_input("Have you thought something creative to set? ")
+#        with open('status.csv', 'a') as new_status:
+#            writer = csv.writer(new_status)
+#            writer.writerow(new_status_message,True)
+        updated_status_message = new_status_message
+
+        if len(new_status_message) > 0:
+            STATUS_MESSAGES.append(new_status_message)
+
+    elif default.upper()=='Y':
+#        load_status()
+        item_position = 1
+        for message in STATUS_MESSAGES:
+            print '%d. %s' % (item_position, message)
+            item_position = item_position + 1
+        message_selection = int(raw_input("\nChoose from the above messages "))
+
+        if len(STATUS_MESSAGES) >= message_selection:
+            updated_status_message = STATUS_MESSAGES[message_selection - 1]
+
+        else:
+            print 'The option you chose is not valid! Press either y or n.'
+
+        if updated_status_message:
+            print 'Your updated status message is: %s' % (updated_status_message)
+        else:
+            print 'You did not update your status message'
+
+        return updated_status_message
+
+#def load_status():
+#    with open('status.csv', 'rb') as new_status:
+#        reader = csv.reader(new_status)
+#        for row in reader:
+#            status.append(row[0])
+#function to add a new friend
+def add_friend():
+    new_friend = Spy('', '', 0, 0.0)
+    # to add new friend's name and salutation
+    new_friend.name = raw_input("Please add your friend's name: ")
+    new_friend.salutation= raw_input("Are they Mr. or Ms.?: ")
+    # to add new friend's age
+    new_friend.age = input("What is their Age?")
+    # to add new friend's spy rating
+    new_friend.rating = input("What is their Spy rating?")
+    # validation of name age and salutation
+    if len(new_friend.name) > 0 and new_friend.age > 17 and new_friend.rating >= spy.rating:
+        friends.append(new_friend)
+        print 'Friend Added!'
+        with open('friends.csv', 'ab') as friends_data:
+            writer = csv.writer(friends_data)
+            writer.writerow([new_friend.name, new_friend.salutation, new_friend.age,new_friend.rating])
+
+
+    else:
+        print 'Sorry! Invalid entry. We can\'t add spy with the details you provided'
+    return len(friends)
+
+
+def load_friends():
+    with open('friends.csv', 'rb') as friends_data:
+        reader = csv.reader(friends_data)
+        for row in reader:
+            spy = Spy(row[0], row[1], int(row[2]), float(row[3]))
+            friends.append(spy)
+
+
+#function to select a friend from the list of friends
+def select_a_friend():
+    item_number = 0
+    for friend in friends:
+       print '%d. %s aged %d with rating %.2f is online' % (item_number +1, friend.name,friend.age, friend.rating)
+       item_number = item_number + 1
+    friend_choice = input("Choose from your friends:")
+    friend_choice_position = friend_choice - 1
+    return friend_choice_position
+
+#function to send a message to a friend
+def send_message():
+
+    friend_choice = select_a_friend()
+    #taking the image encoding it and appending it to the chats
+    original_image = raw_input("What is the name of the image?")
+    output_path = "output1.jpg"
+    text = raw_input("What do you want to say? ")
+    Steganography.encode(original_image, output_path, text)
+    time = datetime.now()
+    new_chat = ChatMessage(text,time, True)
+    friends[friend_choice].chats.append(new_chat)
+    print "Your secret message image is ready!"
+    with open('chats.csv', 'ab') as chats:
+        writer = csv.writer(chats)
+        time = time.strftime("%b %d %Y %H:%M:%S")
+        writer.writerow([friends[friend_choice].name, text, time, True])
+
+
+
+#function to decode and read a secret message
+def read_message():
+
+    sender = select_a_friend()
+    output_path = raw_input("What is the name of the file?")
+    secret_text = Steganography.decode(output_path)
+    time = datetime.now()
+    new_chat = ChatMessage(secret_text,time,False)
+    friends[sender].chats.append(new_chat)
+    print secret_text
+
+    with open('chats.csv', 'ab') as chats:
+        writer = csv.writer(chats)
+        time = time.strftime("%b %d %Y %H:%M:%S")
+        writer.writerow([friends[sender].name, secret_text, time, False])
+    print "Your secret message has been saved!"
+
+    if "save me".upper() in secret_text:
+        print "Message toh msg hota h, ladka bheje yaa ladki!"
+    if "khamoooshh".upper() in secret_text:
+        print "Aata Majhi Satakli!"
+    if "SOS" in secret_text:
+        print "Emergency calls Only!"
+    if "MOGAMBO KHUSH HUA" in secret_text :
+        print "Tumse Naa Ho Paega!"
+
+def load_chats():
+    with open('chats.csv', 'rb') as chats_data:
+        reader = csv.reader(chats_data)
+
+        for row in reader:
+            chat1 = ChatMessage(row[1], row[2], row[3])
+            for i in friends:
+                if i.name == row[0]:
+                    j = friends.index(i)
+                    friends[j].chats.append(chat1)
+
+
+#function to read chat history
+def read_chat_history():
+    print("Whose chat histroy you want see")
+    read_for = select_a_friend()
+    print '\n'
+    for chat in friends[read_for].chats:
+        if chat.sent_by_me == 'True':
+            print colored('[%s] ' % (chat.time.strftime('%d %B %Y')), 'blue'),
+            print colored("Cena ","red"),
+            print colored('%s' % chat.message, "grey")
+        else:
+            print colored('[%s] ' % (chat.time.strftime('%d %B %Y')), "blue"),
+            print colored('%s ' % (friends[read_for].name), "red"),
+            print colored('%s ' % (chat.message), "grey")
+
+
+#function to start a chat
+def start_to_chat(spy):
+    load_friends()
+    load_chats()
+    recent_status_message = None
+    spy.name = spy.salutation+ " " + spy.name
+    display_menu=True
+    while display_menu:
+         menu_choices = "What do you wish to do? \n 1. Add a status update \n 2. Add a friend spy \n 3.Choose a friend \n 4. Send a Secret Message \n 5.Read the Secret Message \n 6. Read Older chats \n 7.Close my Application \n"
+         menu_choice =raw_input(menu_choices)
+         if len(menu_choice) > 0:
+             menu_choice = int(menu_choice)
+             if menu_choice == 1:
+                recent_status_message = add_your_status(recent_status_message)
+             elif menu_choice == 2:
+                number_of_friends = add_friend()
+                print 'You have %d friends'%(number_of_friends)
+             elif menu_choice == 3:
+                 select_a_friend()
+             elif menu_choice == 4:
+                 send_message()
+             elif menu_choice == 5:
+                 read_message()
+             elif menu_choice == 6:
+                 read_chat_history()
+
+             else:
+                 display_menu = False
+while True:
+    if counter<3:
+        question= "Do you wish to continue as "+ spy.salutation+ " "+ spy.name+ "(Y/ N)?"
+        existing= raw_input(question)
+        if existing.lower()=="y":
+            default_password="Doremon"
+            password=raw_input("Please enter your password:")
+            if password == default_password:
+                start_to_chat(spy)
+
+            else:
+                print "Login failed! Re-enter the credentials"
+                counter+=1
+        elif existing.upper() == "N":
+            spy = Spy('', '', 0, 0.0)
+            # to add the name
+            spy.name = raw_input("Welcome to spy chat,tell me your spy name first:")
+            if len(spy.name) > 0:
+                spy.salutation = raw_input("Should I call you Mr. or Ms.?: ")
+                # to add the age
+                spy.age = int(raw_input("What is your age?"))
+                # validating age
+                if spy.age > 17 and spy.age < 50:
+                    # to add the rating
+                    spy.rating = input("What is your spy rating?")
+                    # message according to the spy rating
+                    if spy.rating > 4.5:
+                        print 'Ultimate Khiladi!'
+                    elif spy.rating > 3.5 and spy.rating <= 4.5:
+                        print 'Too close Buddy!'
+                    elif spy.rating >= 2.5 and spy.rating <= 3.5:
+                        print 'Improvize Dude!'
+                    else:
+                        print 'Aao kabhi Acadview Pe!'
+                    spy.is_online = True
+
+                    start_to_chat(spy)
+                else:
+                    print 'Sorry you are not of the correct age to be a spy Buddy!'
+            else:
+                print 'Please add a valid spy name Man!'
+        else:
+            print "Wrong input! The program will terminate now."
+            exit()
+    else:
+        print 'Login limit has suceeded. Please try again after some time'
+        exit()
+
